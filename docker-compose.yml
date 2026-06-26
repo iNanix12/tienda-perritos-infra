@@ -1,1 +1,48 @@
+version: "3.8"
 
+# Este docker-compose es solo para desarrollo y pruebas LOCALES.
+# En AWS, cada servicio corre en su propia instancia EC2 (ver docs/arquitectura.md),
+# desplegado de forma independiente por su pipeline de GitHub Actions.
+
+services:
+  frontend:
+    build:
+      context: ../tienda-perritos-frontend
+      args:
+        BACKEND_URL: http://localhost:3001
+    container_name: tienda-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ../tienda-perritos-backend
+    container_name: tienda-backend
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: admin123
+      DB_NAME: tienda_perritos
+      DB_PORT: 3306
+      CORS_ORIGIN: "*"
+    ports:
+      - "3001:3001"
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8
+    container_name: tienda-db
+    environment:
+      MYSQL_ROOT_PASSWORD: admin123
+      MYSQL_DATABASE: tienda_perritos
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+
+volumes:
+  dbdata:
